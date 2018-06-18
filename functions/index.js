@@ -1,10 +1,12 @@
 const functions = require('firebase-functions');
 
+const admin = require('firebase-admin');
+admin.initializeApp(functions.config().firebase);
+
 const gcsConfig = {
   projectId: 'sakal-s',
   keyFilename: 'sakal-s-firebase-adminsdk-tttz9-5022f7cb73.json',
 };
-
 const gcs = require('@google-cloud/storage')(gcsConfig);
 
 const spawn = require('child-process-promise').spawn;
@@ -44,6 +46,7 @@ exports.onUpload = functions.storage.object().onFinalize(event => {
 });
 
 exports.uploadFile = functions.https.onRequest((req, res) => {
+  // req.query.text
   cors(req, res, () => {
     if (req.method !== 'POST') {
       return res.status(200).json({
@@ -86,4 +89,26 @@ exports.uploadFile = functions.https.onRequest((req, res) => {
 
     busboy.end(req.rawBody);
   });
+});
+
+
+// https://us-central1-sakal-s.cloudfunctions.net/insertIntoDB
+// https://us-central1-sakal-s.cloudfunctions.net/insertIntoDB?text=newUser2
+exports.insertIntoDB = functions.https.onRequest((req, res) => {
+  const text = req.query.text;
+
+  admin.database().ref('/users').push({text})
+    .then(() => {
+      res.status(200).json({
+        message: 'Uploaded newUser successfully ✨'
+      })
+    })
+    .catch(err => {
+      res.status(500).json({
+        error: err,
+      })
+    })
+  /*  .then(snapshot => {
+      res.redirect(303, snapshot.ref)
+    })*/
 });
